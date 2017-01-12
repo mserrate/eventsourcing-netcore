@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "debugType": "portable"
+  },
+  "dependencies": {},
+  "frameworks": {
+    "netstandard1.6": {
+      "dependencies": {
+        "EventStore.ClientAPI.NetCore": "0.0.1-alpha",
+        "NETStandard.Library": "1.6.1",
+        "System.Reflection.TypeExtensions": "4.3.0"
+      }
+    }
+  }
+}
