@@ -116,7 +116,7 @@ namespace Domain.EventStore
 
         public async Task Save(IAggregate aggregate)
         {
-            await Save(aggregate, Guid.NewGuid(), d => { });
+            await Save(aggregate, Guid.NewGuid(), d => d.Add("Timestamp", DateTime.UtcNow));
         }
     }
 }
