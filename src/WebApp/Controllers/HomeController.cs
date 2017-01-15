@@ -17,7 +17,7 @@ namespace WebApp.Controllers
             this.repository = repository;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
             //var rr = await repository.GetById<InventoryItem>(Guid.Parse("14e4d3b4e1bc4d7890c6d19ae1c52d9f"));
             //Console.WriteLine("Nino: " + rr.Id);

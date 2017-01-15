@@ -11,12 +11,14 @@ namespace WebApp.Controllers
     public class ShoppingCartController : Controller
     {
         private readonly IAsyncRepository _repository;
-        private readonly IModelState<ShoppingCartViewModel> _viewModel;
+        private readonly IModelState<ShoppingCartViewModel> _viewModelState;
+        private readonly ProductsCache _cache;
 
-        public ShoppingCartController(IAsyncRepository repository, IModelState<ShoppingCartViewModel> viewModel)
+        public ShoppingCartController(IAsyncRepository repository, IModelState<ShoppingCartViewModel> viewModelState, ProductsCache cache)
         {
             _repository = repository;
-            _viewModel = viewModel;
+            _viewModelState = viewModelState;
+            _cache = cache;
         }
 
         public async Task<IActionResult> Index(Guid id)
@@ -26,10 +28,7 @@ namespace WebApp.Controllers
                 return RedirectToAction("Index", new { id = await CreateShoppingCartSession() });
             }
 
-            var tito = await _viewModel.GetCurrentState(id);
-            Console.WriteLine(tito.Items.FirstOrDefault());
-
-            var viewModel = new ShoppingCartViewModel { Id = id };
+            var viewModel = await _viewModelState.GetCurrentState(id);
             return View(viewModel);
         }
 
@@ -40,13 +39,39 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddItem(Guid id)
+        public async Task<IActionResult> AddItem(Guid id, Guid itemId)
         {
             var aggregate = await _repository.GetById<ShoppingCart>(id);
-            aggregate.AddItem(Guid.NewGuid());
+            aggregate.AddItem(itemId);
             await _repository.Save(aggregate);
 
             return RedirectToAction("Index", new { id = id });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveItem(Guid id, Guid itemId)
+        {
+            var aggregate = await _repository.GetById<ShoppingCart>(id);
+            aggregate.RemoveItem(itemId);
+            await _repository.Save(aggregate);
+
+            return RedirectToAction("Index", new { id = id });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RefreshItem(Guid id, Guid itemId, int quantity)
+        {
+            var aggregate = await _repository.GetById<ShoppingCart>(id);
+            aggregate.ChangeItemQuantity(itemId, quantity);
+            await _repository.Save(aggregate);
+
+            return RedirectToAction("Index", new { id = id });
+        }
+
+        [HttpGet("/products")]
+        public JsonResult GetProductList() 
+        {
+            return Json(_cache.GetProductList());
         }
 
         private async Task<Guid> CreateShoppingCartSession()

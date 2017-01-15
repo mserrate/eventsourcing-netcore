@@ -17,6 +17,7 @@ namespace WebApp.ViewModels
         public Guid Id { get; set; }
         public bool IsCheckOut { get; set; }
         public List<Item> Items { get; }
+        public decimal Total { get { return Items.Sum(i => i.Subtotal); } }
 
         public ShoppingCartViewModel()
         {
@@ -26,17 +27,23 @@ namespace WebApp.ViewModels
         public class Item
         {
             public Guid ItemId { get; set; }
-            public int Count { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public decimal Price { get; set; }
+            public int Quantity { get; set; }
+            public decimal Subtotal { get { return Price * Quantity; }  }
         }
     }
 
     public class ShoppingCartState : IModelState<ShoppingCartViewModel>
     {
         private readonly IEventStoreConnection _connection;
+        private readonly ProductsCache _cache;
 
-        public ShoppingCartState(IEventStoreConnection connection)
+        public ShoppingCartState(IEventStoreConnection connection, ProductsCache cache)
         {
             _connection = connection;
+            _cache = cache;
         }
 
         public async Task<ShoppingCartViewModel> GetCurrentState(Guid id)
@@ -76,7 +83,8 @@ namespace WebApp.ViewModels
                 {
                     var t = (ItemAddedToCart)@event;
                     viewModel.Id = t.CartId;
-                    viewModel.Items.Add(new Item { ItemId = t.ItemId});
+                    var item = _cache.GetPoduct(t.ItemId);
+                    viewModel.Items.Add(new Item { ItemId = item.Id, Name = item.Name, Description = item.Description, Quantity = 1, Price = item.Price });
                 } 
                 else if (@event.GetType() == typeof(ItemRemovedFromCart))
                 {
@@ -84,17 +92,11 @@ namespace WebApp.ViewModels
                     var item = viewModel.Items.Where(x => x.ItemId == t.ItemId).SingleOrDefault();
                     viewModel.Items.Remove(item);
                 } 
-                else if (@event.GetType() == typeof(ItemIncremented)) 
+                else if (@event.GetType() == typeof(ItemQuantityChanged)) 
                 {
-                    var t = (ItemIncremented)@event;
+                    var t = (ItemQuantityChanged)@event;
                     var item = viewModel.Items.Where(x => x.ItemId == t.ItemId).SingleOrDefault();
-                    item.Count++;
-                } 
-                else if (@event.GetType() == typeof(ItemDecremented)) 
-                {
-                    var t = (ItemDecremented)@event;
-                    var item = viewModel.Items.Where(x => x.ItemId == t.ItemId).SingleOrDefault();
-                    item.Count--;
+                    item.Quantity = t.Quantity;
                 } 
                 else if (@event.GetType() == typeof(ShoppingCartCheckedOut)) 
                 {

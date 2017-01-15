@@ -34,9 +34,11 @@ namespace WebApp
             services.AddSingleton<IEventStoreConnection>(GetEventStoreConnection());
             services.AddTransient<IAsyncRepository, EventStoreRepository>();
             services.AddTransient(typeof(IModelState<ShoppingCartViewModel>), typeof(ShoppingCartState));
+            services.AddSingleton<ProductsCache>();
 
             // Add framework services.
             services.AddMvc();
+            services.AddMemoryCache();
         }
 
         private IEventStoreConnection GetEventStoreConnection()
