@@ -25,10 +25,9 @@ namespace Domain
                 _items = new Items();
             });
             Register<ShoppingCartCheckedOut>(_ => _checkedOut = true);
-            Register<ItemAddedToCart>(_ => _items.Add(new Item(_.ItemId, 1)));
+            Register<ItemAddedToCart>(_ => _items.Add(new Item(_.ItemId)));
             Register<ItemRemovedFromCart>(_ => _items.Remove(_.ItemId));
-            Register<ItemIncremented>(_ => _items.Get(_.ItemId).Increment());
-            Register<ItemDecremented>(_ => _items.Get(_.ItemId).Decrement());
+            Register<ItemQuantityChanged>(_ => _items.Get(_.ItemId).ChangeQuantity(_.Quantity));
         }
 
         public void AddItem(Guid itemId)
@@ -37,19 +36,15 @@ namespace Domain
             ApplyChange(new ItemAddedToCart(Id, itemId));
         }
 
-        public void IncrementItemCount(Guid itemId)
+        public void ChangeItemQuantity(Guid itemId, int quantity)
         {
             ThrowIfCheckedOut();
             ThrowIfItemNotInCart(itemId);
-            ApplyChange(new ItemIncremented(Id, itemId));
-        }
 
-        public void DecrementItemCount(Guid itemId)
-        {
-            ThrowIfCheckedOut();
-            ThrowIfItemNotInCart(itemId);
-            if (_items.Get(itemId).CanDecrement())
-                ApplyChange(new ItemDecremented(Id, itemId));
+            if (quantity == 0)
+                RemoveItem(itemId);            
+            else
+                ApplyChange(new ItemQuantityChanged(Id, itemId, quantity));
         }
 
         public void RemoveItem(Guid itemId)
@@ -64,7 +59,6 @@ namespace Domain
             if (_checkedOut) return;
             ApplyChange(new ShoppingCartCheckedOut(Id));
         }
-
 
         private void ThrowIfCheckedOut()
         {
@@ -112,29 +106,19 @@ namespace Domain
         class Item
         {
             private readonly Guid _itemId;
-            private int _count;
+            private int _quantity;
 
-            public Item(Guid itemId, int count)
+            public Item(Guid itemId)
             {
                 _itemId = itemId;
-                _count = count;
+                _quantity = 1;
             }
 
             public Guid ItemId { get { return _itemId; } }
 
-            public void Increment()
+            public void ChangeQuantity(int quantity)
             {
-                _count += 1;
-            }
-
-            public void Decrement()
-            {
-                _count -= 1;
-            }
-
-            public bool CanDecrement()
-            {
-                return _count > 0;
+                _quantity = quantity;
             }
         }
     }
