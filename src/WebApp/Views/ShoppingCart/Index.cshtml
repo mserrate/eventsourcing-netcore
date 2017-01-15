@@ -69,6 +69,7 @@
                 <td class="hidden-xs text-center"><strong>Total @Model.Total €</strong></td>
                 <td>
                     <form asp-controller="ShoppingCart" asp-action="Checkout" method="post">
+                        <input type="hidden" asp-for="Id" />
                         <button type="submit" class="btn btn-success btn-block" name="Checkout" value="Checkout" title="Checkout">Checkout <i class="fa fa-angle-right"></i></button>
                     </form>
                 </td>

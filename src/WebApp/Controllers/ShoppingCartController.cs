@@ -68,6 +68,16 @@ namespace WebApp.Controllers
             return RedirectToAction("Index", new { id = id });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Checkout(Guid id)
+        {
+            var aggregate = await _repository.GetById<ShoppingCart>(id);
+            aggregate.Checkout();
+            await _repository.Save(aggregate);
+
+            return RedirectToAction("Index", new { id = id });            
+        }
+
         [HttpGet("/products")]
         public JsonResult GetProductList() 
         {
