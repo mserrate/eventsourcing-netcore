@@ -35,27 +35,29 @@ namespace WebApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IEventStoreConnection>(GetEventStoreConnection());
+            var connString = Configuration.GetConnectionString("EventStore");
+
+            services.AddSingleton<IEventStoreConnection>(GetEventStoreConnection(connString));
             services.AddTransient<IAsyncRepository, EventStoreRepository>();
             services.AddTransient(typeof(IModelState<ShoppingCartViewModel>), typeof(ShoppingCartState));
             services.AddSingleton<ProductsCache>();
 
-            SetupProjections();
+            SetupProjections(connString);
             // Add framework services.
             services.AddMvc();
             services.AddMemoryCache();
         }
 
-        private IEventStoreConnection GetEventStoreConnection()
+        private IEventStoreConnection GetEventStoreConnection(string connString)
         {
-            var connection = EventStoreConnection.Create(Configuration.GetConnectionString("EventStore"));
+            var connection = EventStoreConnection.Create(connString);
             connection.ConnectAsync().Wait();
             return connection;
         }
 
-        private void SetupProjections()
+        private void SetupProjections(string connString)
         {
-            ProjectionSetup.Run(_environment.ContentRootPath).Wait();
+            ProjectionSetup.Run(connString, _environment.ContentRootPath).Wait();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
